@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Corazón de un gato adulto · Simulador 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080e19;--panel:#101b2d;--panel2:#17263d;--line:#293d5b;--ink:#edf4ff;--muted:#91a6c6;--red:#fa5268;--blue:#42baff;--gold:#ffc66d;--mint:#63e0c0;--purple:#bd9bff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px Inter,system-ui,sans-serif}
+button,input{font:inherit;color:inherit}button{cursor:pointer}
+#app{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:62px minmax(0,1fr)}
+header{grid-column:1/-1;display:flex;align-items:center;gap:13px;padding:0 18px;background:linear-gradient(90deg,#101c31,#0c1423);border-bottom:1px solid var(--line);z-index:5}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#ff6c7b,#9b294b);display:grid;place-items:center;box-shadow:0 0 22px #fa526833;font-size:22px}
+h1{font:700 18px "Chakra Petch",sans-serif;margin:0;letter-spacing:.5px}header p{margin:2px 0 0;color:var(--muted);font-size:11px}
+.spacer{flex:1}.headbtn,.btn{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px 12px;font-weight:600;font-size:12px}
+.headbtn:hover,.btn:hover{border-color:var(--blue);transform:translateY(-1px)}
+#stage{position:relative;min-height:0;overflow:hidden;background:radial-gradient(ellipse at 45% 40%,#172944 0,#0b1525 55%,#070c15 100%)}
+#viewport{position:absolute;inset:0}canvas{display:block}
+.hud{position:absolute;z-index:2;background:#091321d9;border:1px solid #344967;border-radius:12px;backdrop-filter:blur(8px);box-shadow:0 8px 25px #0005}
+#phaseBadge{top:14px;left:14px;padding:10px 14px;border-left:4px solid var(--mint);min-width:190px}
+#phaseBadge strong{display:block;font:700 17px "Chakra Petch";color:var(--mint)}
+#phaseBadge small{color:var(--muted);font-size:10px}
+#hint{top:16px;right:16px;padding:8px 12px;color:var(--muted);font-size:11px}
+#pieceInfo{left:14px;bottom:112px;width:min(330px,calc(100% - 28px));padding:13px 15px;display:none}
+#pieceInfo.show{display:block}
+#pieceInfo b{font:700 16px "Chakra Petch";color:var(--gold)}#pieceInfo p{margin:6px 0 0;color:#c7d5e9;line-height:1.5;font-size:12px}
+#timeline{position:absolute;left:12px;right:12px;bottom:12px;padding:11px 13px 9px;z-index:3}
+#phases{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.phase{background:#17263c;border:1px solid #2b405f;border-radius:8px;padding:7px 5px;text-align:left;font-size:10px;color:var(--muted)}
+.phase.active{border-color:var(--pc);color:var(--ink);box-shadow:0 0 12px color-mix(in srgb,var(--pc) 35%,transparent)}
+.phase i{display:block;height:4px;background:#263b58;border-radius:5px;margin-top:7px;overflow:hidden}
+.phase em{display:block;height:100%;width:0;background:var(--pc)}
+#readout{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font:11px "Chakra Petch";margin-top:8px;flex-wrap:wrap}
+#readout b{color:var(--ink)}
+#panel{overflow:auto;background:linear-gradient(180deg,#101b2d,#0b1422);border-left:1px solid var(--line);padding:16px}
+.section{margin-bottom:19px}.section h3{font:700 11px "Chakra Petch";letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.btn.primary{background:linear-gradient(135deg,#214e77,#173650);border-color:#32638f}.btn.accent{background:linear-gradient(135deg,#7d2c48,#4e2038);border-color:#a84965}
+.btn.wide{width:100%;margin-top:8px}
+.control{margin-top:12px}.control label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:7px}.control output{font:600 12px "Chakra Petch";color:var(--blue)}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.note{font-size:10px;color:#788eaf;line-height:1.5;margin-top:6px}
+.card{border:1px solid #334968;background:linear-gradient(145deg,#182a43,#101b2c);border-radius:12px;padding:12px}
+.card h4{font:700 16px "Chakra Petch";margin:0 0 6px;color:var(--mint)}.card p{font-size:12px;line-height:1.5;color:#c9d7e9;margin:0}.tip{margin-top:9px;padding:8px;border-radius:8px;background:#0a1525;color:var(--gold);font-size:11px;line-height:1.45}
+.switchrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:12px;font-weight:600;border-bottom:1px solid #20324c}
+.switchrow input{accent-color:var(--mint);width:17px;height:17px}
+select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--ink)}
+#legend{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.part{display:flex;align-items:center;gap:7px;background:#142239;border:1px solid #293e5e;border-radius:8px;padding:7px;font-size:10px;text-align:left}
+.part i{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);flex:none}
+.part.active{border-color:var(--c);background:#20334e}
+#toast{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#10223a;border:1px solid #4777a5;padding:9px 15px;border-radius:30px;z-index:10;opacity:0;pointer-events:none;transition:.25s;font-size:11px}
+#toast.show{opacity:1}
+@media(max-width:900px){#app{height:auto;min-height:100dvh;grid-template-columns:1fr;grid-template-rows:58px 58vh auto}#stage{min-height:440px}#panel{border-left:0;border-top:1px solid var(--line)}header p,#hint{display:none}h1{font-size:15px}}
+@media(max-width:480px){header{padding:0 10px}.headbtn{padding:8px;font-size:10px}#phaseBadge{min-width:0}#timeline{padding:8px} .phase{font-size:9px}#readout{font-size:9px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="app">
+<header>
+ <div class="logo">♥</div><div><h1>CORAZÓN FELINO</h1><p>Laboratorio anatómico 3D · Gato adulto</p></div>
+ <div class="spacer"></div>
+ <button class="headbtn" id="sound">♫ Sonido: activado</button><button class="headbtn" id="full">⛶</button>
+</header>
+<main id="stage">
+ <div id="viewport"></div>
+ <div id="phaseBadge" class="hud"><strong id="phaseName">LLENADO VENTRICULAR</strong><small id="phaseSub">Diástole · fase 1 de 4</small></div>
+ <div id="hint" class="hud">Arrastra para girar · rueda para acercar · selecciona una estructura</div>
+ <div id="pieceInfo" class="hud"><b id="pieceName"></b><p id="pieceDesc"></p></div>
+ <div id="timeline" class="hud">
+  <div id="phases">
+   <button class="phase active" style="--pc:#63e0c0" data-phase="0">1 · Llenado ventricular<i><em></em></i></button>
+   <button class="phase" style="--pc:#ffc66d" data-phase="1">2 · Sístole auricular<i><em></em></i></button>
+   <button class="phase" style="--pc:#fa5268" data-phase="2">3 · Contracción y eyección<i><em></em></i></button>
+   <button class="phase" style="--pc:#42baff" data-phase="3">4 · Relajación<i><em></em></i></button>
+  </div>
+  <div id="readout"><span>Frecuencia simulada: <b id="bpmRead">120 BPM</b></span><span>Fase: <b id="phaseRead">1 / 4</b></span><span>Vueltas: <b id="cycles">0</b></span></div>
+ </div>
+ <div id="toast"></div>
+</main>
+<aside id="panel">
+ <section class="section">
+  <h3>Control del ciclo cardíaco</h3>
+  <div class="grid2"><button class="btn primary" id="play">Ⅱ Pausar</button><button class="btn" id="step">Siguiente fase ›</button></div>
+  <div class="control"><label>Velocidad del corazón <output id="bpmOut">120 BPM</output></label><input id="bpm" type="range" min="60" max="220" step="5" value="120"><div class="note">Velocidad ajustable para observar el movimiento. No representa un valor clínico de diagnóstico.</div></div>
+  <button class="btn accent wide" id="explode">DESPIECE DEL CORAZÓN</button>
+  <div class="control"><label>Separación de estructuras <output id="sepOut">0%</output></label><input id="sep" type="range" min="0" max="100" value="0"></div>
+ </section>
+ <section class="section"><h3>Fase actual</h3><div class="card"><h4 id="cardTitle">Llenado ventricular</h4><p id="cardDesc">Durante la diástole, el músculo ventricular se relaja. La sangre pasa desde las aurículas hacia los ventrículos a través de las válvulas auriculoventriculares abiertas.</p><div class="tip" id="tip">Observa: las válvulas mitral y tricúspide están abiertas; las válvulas de salida permanecen cerradas.</div></div></section>
+ <section class="section"><h3>Visualización</h3>
+  <label class="switchrow">Corte / vista interna <input type="checkbox" id="cut" checked></label>
+  <label class="switchrow">Etiquetas de estructuras <input type="checkbox" id="labels" checked></label>
+  <label class="switchrow">Rotación automática <input type="checkbox" id="rotate"></label>
+  <div class="control"><label>Calidad gráfica</label><select id="quality"><option value="high">Alta</option><option value="medium" selected>Media</option><option value="low">Baja</option></select></div>
+ </section>
+ <section class="section"><h3>Cámara</h3><div class="grid2"><button class="btn view" data-view="front">Frontal</button><button class="btn view" data-view="side">Lateral</button><button class="btn view" data-view="top">Superior</button><button class="btn view" data-view="iso">Isométrica</button></div><div class="grid2" style="margin-top:7px"><button class="btn" id="center">Centrar</button><button class="btn" id="surprise">Vista sorpresa</button></div></section>
+ <section class="section"><h3>Estructuras anatómicas</h3><div id="legend"></div><div class="note">Selecciona una estructura en la lista o directamente en el modelo 3D.</div></section>
+ <section class="section"><h3>Acciones</h3><div class="grid2"><button class="btn" id="reset">Reiniciar</button><button class="btn primary" id="shot">Captura PNG</button></div><div class="note">Atajos: Espacio = pausa · → = siguiente fase · E = despiece · R = reiniciar · Esc = cerrar ficha.</div></section>
+ <section class="section"><h3>Dato anatómico</h3><div class="note">El corazón del gato tiene cuatro cavidades: dos aurículas que reciben sangre y dos ventrículos que la impulsan. Las válvulas mantienen el flujo en una sola dirección.</div></section>
+</aside>
+</div>
+<script type="module">
+const $=s=>document.querySelector(s), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
+let THREE,OrbitControls,scene,camera,renderer,controls,heart,composer;
+const state={progress:0,bpm:120,playing:true,explode:0,explodeTarget:0,cut:true,labels:true,sound:true,cycles:0,selected:null};
+const phases=[
+{name:'LLENADO VENTRICULAR',sub:'Diástole · fase 1 de 4',title:'Llenado ventricular',color:'#63e0c0',desc:'Durante la diástole, el músculo ventricular se relaja. La sangre pasa desde las aurículas hacia los ventrículos a través de las válvulas auriculoventriculares abiertas.',tip:'Observa: las válvulas mitral y tricúspide están abiertas; las válvulas de salida permanecen cerradas.'},
+{name:'SÍSTOLE AURICULAR',sub:'Contracción de las aurículas · fase 2 de 4',title:'Sístole auricular',color:'#ffc66d',desc:'Las aurículas se contraen y completan el paso de sangre hacia los ventrículos. Las válvulas mitral y tricúspide continúan abiertas.',tip:'Observa: las aurículas se comprimen suavemente y los ventrículos terminan de llenarse.'},
+{name:'SÍSTOLE VENTRICULAR',sub:'Contracción y eyección · fase 3 de 4',title:'Contracción y eyección',color:'#fa5268',desc:'Los ventrículos se contraen. Se cierran las válvulas mitral y tricúspide; se abren las válvulas aórtica y pulmonar para impulsar la sangre hacia el cuerpo y los pulmones.',tip:'Observa: la sangre sale del ventrículo derecho hacia la arteria pulmonar y del izquierdo hacia la aorta.'},
+{name:'RELAJACIÓN',sub:'Relajación isovolumétrica · fase 4 de 4',title:'Relajación ventricular',color:'#42baff',desc:'Los ventrículos comienzan a relajarse. Las válvulas aórtica y pulmonar se cierran para impedir el retroceso de la sangre. Cuando la presión ventricular baja, comienza un nuevo llenado.',tip:'Observa: las válvulas de salida se cierran antes de que vuelva a abrirse el paso desde las aurículas.'}
+];
+const parts=[
+['auricula_derecha','Aurícula derecha','#3c9de8','Recibe la sangre con poco oxígeno que regresa desde el cuerpo por las venas cavas.'],
+['ventriculo_derecho','Ventrículo derecho','#277fc5','Impulsa la sangre hacia los pulmones a través de la arteria pulmonar.'],
+['auricula_izquierda','Aurícula izquierda','#f27b83','Recibe de los pulmones la sangre rica en oxígeno por medio de las venas pulmonares.'],
+['ventriculo_izquierdo','Ventrículo izquierdo','#d94b61','Tiene una pared muscular gruesa y bombea sangre hacia todo el cuerpo por la aorta.'],
+['valvula_tricuspide','Válvula tricúspide','#63e0c0','Está entre la aurícula derecha y el ventrículo derecho; evita que la sangre retroceda a la aurícula.'],
+['valvula_mitral','Válvula mitral','#ffc66d','Está entre la aurícula izquierda y el ventrículo izquierdo; evita el reflujo hacia la aurícula.'],
+['valvula_pulmonar','Válvula pulmonar','#9c9cff','Controla la salida del ventrículo derecho hacia la arteria pulmonar.'],
+['valvula_aortica','Válvula aórtica','#ff9b70','Controla la salida del ventrículo izquierdo hacia la aorta.'],
+['aorta','Aorta','#e34f61','Arteria principal que lleva sangre rica en oxígeno desde el ventrículo izquierdo al organismo.'],
+['arteria_pulmonar','Arteria pulmonar','#328dd0','Lleva sangre con poco oxígeno desde el ventrículo derecho hacia los pulmones.'],
+['venas_cavas','Venas cavas','#287ec0','Devuelven al corazón la sangre procedente del cuerpo y desembocan en la aurícula derecha.'],
+['venas_pulmonares','Venas pulmonares','#e77883','Transportan sangre rica en oxígeno desde los pulmones hasta la aurícula izquierda.'],
+['tabique','Tabique interventricular','#b9c6d8','Pared muscular que separa ambos ventrículos y evita que sus sangres se mezclen normalmente.'],
+['miocardio','Miocardio','#bd9bff','Tejido muscular del corazón responsable de la contracción que impulsa la sangre.']
+];
+const objects={}, basePositions={}, offsets={}, labels={}; let blood=[], valveMeshes=[], baseScales={};
+let audio=null,master=null;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1800)}
+function material(color,opacity=1){return new THREE.MeshStandardMaterial({color,roughness:.42,metalness:.12,transparent:opacity<1,opacity,side:THREE.DoubleSide,emissive:color,emissiveIntensity:.07})}
+function addPart(id,geo,mat,pos,offset=[0,0,0]){const g=new THREE.Group();g.position.set(...pos);g.userData.partId=id;const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.receiveShadow=true;g.add(m);heart.add(g);objects[id]=g;basePositions[id]=new THREE.Vector3(...pos);offsets[id]=new THREE.Vector3(...offset);return g}
+function sphere(id,pos,scale,color,offset){const g=addPart(id,new THREE.SphereGeometry(1,40,28),material(color,.92),pos,offset);g.scale.set(...scale);baseScales[id]=g.scale.clone();return g}
+function tube(id,points,r,color,offset=[0,0,0]){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return addPart(id,new THREE.TubeGeometry(curve,48,r,16,false),material(color),[0,0,0],offset)}
+function ring(id,pos,color,r=.34){const g=addPart(id,new THREE.TorusGeometry(r,.065,12,36),material(color),pos,[0,.25,0]);g.rotation.x=Math.PI/2;valveMeshes.push(g);return g}
+function build(){
+ scene=new THREE.Scene();scene.fog=new THREE.Fog(0x0b1424,18,38);
+ camera=new THREE.PerspectiveCamera(42,1,.1,100);camera.position.set(8,6,11);
+ renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize($('#viewport').clientWidth,$('#viewport').clientHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;$('#viewport').appendChild(renderer.domElement);
+ controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,.1,0);controls.minDistance=4;controls.maxDistance=25;
+ scene.add(new THREE.HemisphereLight(0xa9c9ff,0x24111c,1.15));const key=new THREE.DirectionalLight(0xffe8df,2.3);key.position.set(5,9,8);key.castShadow=true;key.shadow.mapSize.set(1024,1024);scene.add(key);const rim=new THREE.PointLight(0x3e9dff,2,18);rim.position.set(-5,2,-4);scene.add(rim);const warm=new THREE.PointLight(0xff526d,1.4,15);warm.position.set(4,-2,4);scene.add(warm);
+ const floor=new THREE.Mesh(new THREE.CircleGeometry(6,64),new THREE.MeshStandardMaterial({color:0x101e32,roughness:.8,metalness:.2}));floor.rotation.x=-Math.PI/2;floor.position.y=-3.1;floor.receiveShadow=true;scene.add(floor);
+ const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.7,.22,64),new THREE.MeshStandardMaterial({color:0x1c3552,metalness:.7,roughness:.3,emissive:0x15314b,emissiveIntensity:.3}));pedestal.position.y=-3;scene.add(pedestal);
+ const tor=new THREE.Mesh(new THREE.TorusGeometry(2.45,.035,10,100),new THREE.MeshBasicMaterial({color:0x42baff}));tor.rotation.x=Math.PI/2;tor.position.y=-2.87;scene.add(tor);
+ heart=new THREE.Group();scene.add(heart);
+ // Four chambers: right side shown on viewer's left, as in anatomical anterior view.
+ sphere('auricula_derecha',[-.95,.85,.05],[.72,.9,.67],0x287fc0,[-1.1,.25,0]);
+ sphere('ventriculo_derecho',[-.72,-.65,.02],[.83,1.28,.72],0x236fae,[-1.0,-.25,0]);
+ sphere('auricula_izquierda',[.95,.85,.05],[.72,.9,.67],0xd85a70,[1.1,.25,0]);
+ sphere('ventriculo_izquierdo',[.72,-.65,.02],[.88,1.42,.76],0xb93654,[1.0,-.25,0]);
+ // Outer myocardium silhouette
+ const shell= new THREE.Mesh(new THREE.SphereGeometry(1,48,32),material(0x9e344e,.16));shell.scale.set(1.75,2.25,.9);shell.position.y=-.05;shell.userData.shell=true;heart.add(shell);
+ // septum
+ const sept=addPart('tabique',new THREE.BoxGeometry(.18,2.15,.8),material(0xc4a7aa),[0,-.55,.1]);sept.rotation.z=-.08;
+ // myocardial outer band (stylized muscle rim)
+ const myo=addPart('miocardio',new THREE.TorusGeometry(1.12,.18,16,80),material(0xa9435d,.5),[0,-.2,-.08]);myo.scale.set(1.25,1.65,.72);
+ // large vessels
+ tube('aorta',[[.58,1.15,0],[.65,2.0,0],[.75,2.6,0],[1.35,2.8,0],[1.75,2.45,0],[1.7,1.6,0]],.25,0xc8495d,[.35,0,0]);
+ tube('arteria_pulmonar',[[-.58,.1,0],[-.75,1.0,0],[-1.35,1.55,0],[-1.95,1.45,0],[-2.15,1.0,0]],.22,0x348bc7,[-.25,0,0]);
+ tube('venas_cavas',[[-1.0,2.5,0],[-1.0,1.65,0],[-.95,1.15,0],[-.95,.9,0]],.2,0x287fc0,[-.4,.3,0]);
+ tube('venas_pulmonares',[[2.0,1.35,0],[1.6,1.05,0],[1.25,.9,0]],.13,0xe77883,[.25,.2,0]);
+ // Valve rings, near chamber junctions
+ ring('valvula_tricuspide',[-.78,.02,.62],0x63e0c0,.32);
+ ring('valvula_mitral',[.78,.02,.62],0xffc66d,.32);
+ ring('valvula_pulmonar',[-.78,.85,.25],0x9c9cff,.25);
+ ring('valvula_aortica',[.78,.85,.25],0xff9b70,.25);
+ // Flow paths / moving blood beads
+ const paths=[
+  [[-1.35,2.15,.35],[-1.05,1.5,.55],[-.95,.8,.55],[-.78,.1,.65],[-.72,-.65,.55],[-.75,-1.3,.35],[-1.0,-.1,.35],[-1.35,1.1,.3]],
+  [[-1.35,-.7,.3],[-1.4,.1,.3],[-1.8,1.0,.3],[-1.9,1.4,.3]],
+  [[-1.9,1.4,.3],[-1.2,1.8,.3],[.3,1.5,.3],[1.0,1.0,.3],[.95,.3,.55],[.72,-.65,.55],[.8,-1.6,.35],[1.0,.5,.3],[1.7,1.7,.3]]
+ ];
+ const colors=[0x4db8ff,0x4db8ff,0xff596d];
+ paths.forEach((pts,k)=>{const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)));for(let i=0;i<8;i++){const bead=new THREE.Mesh(new THREE.SphereGeometry(.075,12,10),new THREE.MeshBasicMaterial({color:colors[k]}));scene.add(bead);blood.push({mesh:bead,curve,t:i/8,dir:k===2?1:1});}});
+ // labels in legend
+ const lg=$('#legend');parts.forEach(([id,name,color])=>{const b=document.createElement('button');b.className='part';b.dataset.id=id;b.style.setProperty('--c',color);b.innerHTML=`<i></i><span>${name}</span>`;b.onclick=()=>select(id);lg.appendChild(b)});
+ // subtle particle dust
+ const dustGeo=new THREE.BufferGeometry(),arr=new Float32Array(240);for(let i=0;i<80;i++){arr[i*3]=(Math.random()-.5)*10;arr[i*3+1]=(Math.random()-.5)*7;arr[i*3+2]=(Math.random()-.5)*7;}dustGeo.setAttribute('position',new THREE.BufferAttribute(arr,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0x9bcaff,size:.025,transparent:true,opacity:.45}));scene.add(dust);
+ // raycaster selection
+ const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{const r=renderer.domElement.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(heart.children,true)[0];if(hit){let o=hit.object;while(o&&!o.userData.partId)o=o.parent;if(o)select(o.userData.partId)}});
+}
+function select(id){state.selected=id;const p=parts.find(x=>x[0]===id);if(!p){$('#pieceInfo').classList.remove('show');return}$('#pieceName').textContent=p[1];$('#pieceDesc').textContent=p[3];$('#pieceInfo').classList.add('show');document.querySelectorAll('.part').forEach(b=>b.classList.toggle('active',b.dataset.id===id));}
+function phaseIndex(){return Math.floor((state.progress%1)*4)%4}
+function updatePhase(){const i=phaseIndex(),p=phases[i];$('#phaseName').textContent=p.name;$('#phaseName').style.color=p.color;$('#phaseBadge').style.borderLeftColor=p.color;$('#phaseSub').textContent=p.sub;$('#cardTitle').textContent=p.title;$('#cardTitle').style.color=p.color;$('#cardDesc').textContent=p.desc;$('#tip').textContent=p.tip;$('#phaseRead').textContent=(i+1)+' / 4';document.querySelectorAll('.phase').forEach((b,j)=>{b.classList.toggle('active',j===i);b.querySelector('em').style.width=j<i?'100%':j===i?((state.progress*4)%1*100)+'%':'0%'});}
+function updateHeart(t){const i=phaseIndex(),local=(state.progress*4)%1;const atrial= i===1?Math.sin(local*Math.PI):0;const vent= i===2?Math.sin(local*Math.PI):i===3?.12:0;Object.entries(objects).forEach(([id,g])=>{g.position.copy(basePositions[id]).addScaledVector(offsets[id],state.explode);});
+ // contractile motion
+ for(const id of ['auricula_derecha','auricula_izquierda']){const g=objects[id],b=baseScales[id];g.scale.set(b.x,b.y*(1-atrial*.12),b.z*(1-atrial*.08))}
+ for(const id of ['ventriculo_derecho','ventriculo_izquierdo']){const g=objects[id],b=baseScales[id];g.scale.set(b.x*(1-vent*.12),b.y*(1-vent*.10),b.z*(1-vent*.12))}
+ // valves: open during filling/atrial systole; outflow valves open during ejection
+ const avOpen=i<2?1:0, semOpen=i===2?1:0;
+ ['valvula_tricuspide','valvula_mitral'].forEach(id=>{objects[id].scale.setScalar(1+avOpen*.18);objects[id].rotation.z=avOpen*.18});
+ ['valvula_pulmonar','valvula_aortica'].forEach(id=>{objects[id].scale.setScalar(1+semOpen*.18);objects[id].rotation.z=semOpen*.18});
+ heart.scale.setScalar(1+.012*Math.sin(t*state.bpm/60*Math.PI*2));
+ // opacity mode
+ heart.traverse(o=>{if(o.isMesh&&o.material){if(o.userData.shell){o.visible=state.cut}else if(o.parent?.userData?.partId){const m=o.material;m.transparent=state.cut||state.explode>0;m.opacity=state.cut?.58:state.explode>0?.82:.98;}}});
+ blood.forEach((b,k)=>{b.t=(b.t+state.bpm/60*.035)%1;b.mesh.position.copy(b.curve.getPointAt(b.t));b.mesh.visible=state.explode<.65});
+}
+let last=0,raf=0,lastPhase=-1;
+function animate(now){raf=requestAnimationFrame(animate);const ph=phaseIndex();if(ph!==lastPhase){if(ph===2)soundPulse();lastPhase=ph;}const dt=Math.min((now-last)/1000||0,.04);last=now;if(state.playing){state.progress+=dt*(state.bpm/60)/4;if(state.progress>=1){state.progress-=1;state.cycles++;$('#cycles').textContent=state.cycles}}state.explode+=(state.explodeTarget-state.explode)*Math.min(1,dt*3.5);updateHeart(now/1000);updatePhase();controls.update();renderer.render(scene,camera);$('#sep').value=Math.round(state.explode*100);$('#sepOut').textContent=Math.round(state.explode*100)+'%'}
+function resize(){const w=$('#viewport').clientWidth,h=$('#viewport').clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);if($('#quality').value==='high')renderer.setPixelRatio(Math.min(devicePixelRatio,2));}
+function soundPulse(){if(!state.sound)return;try{if(!audio){audio=new AudioContext();master=audio.createGain();master.gain.value=.12;master.connect(audio.destination)}const t=audio.currentTime;[0,.16].forEach((d,i)=>{const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=i?72:92;g.gain.setValueAtTime(.001,t+d);g.gain.exponentialRampToValueAtTime(.35,t+d+.025);g.gain.exponentialRampToValueAtTime(.001,t+d+.12);o.connect(g);g.connect(master);o.start(t+d);o.stop(t+d+.14)})}catch(e){}}
+function bind(){
+ $('#play').onclick=()=>{state.playing=!state.playing;$('#play').textContent=state.playing?'Ⅱ Pausar':'▶ Reproducir'};
+ $('#step').onclick=()=>{state.playing=false;state.progress=(Math.floor(state.progress*4)+1)/4%1;updatePhase();soundPulse()};
+ $('#bpm').oninput=e=>{state.bpm=+e.target.value;$('#bpmOut').textContent=state.bpm+' BPM';$('#bpmRead').textContent=state.bpm+' BPM'};
+ $('#explode').onclick=()=>{state.explodeTarget=state.explodeTarget>.5?0:1;$('#explode').textContent=state.explodeTarget?'ARMAR CORAZÓN':'DESPIECE DEL CORAZÓN';state.playing=false;$('#play').textContent='▶ Reproducir'};
+ $('#sep').oninput=e=>{state.explode=state.explodeTarget=+e.target.value/100;$('#sepOut').textContent=e.target.value+'%'};
+ $('#cut').onchange=e=>{state.cut=e.target.checked};
+ $('#labels').onchange=e=>{state.labels=e.target.checked;$('#legend').style.opacity=state.labels?1:.28;$('#legend').style.pointerEvents=state.labels?'auto':'none'};
+ $('#rotate').onchange=e=>{controls.autoRotate=e.target.checked};
+ $('#sound').onclick=()=>{state.sound=!state.sound;$('#sound').textContent=state.sound?'♫ Sonido: activado':'♫ Sonido: apagado';if(state.sound)soundPulse()};
+ $('#full').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();
+ $('#center').onclick=()=>{camera.position.set(8,6,11);controls.target.set(0,0,0)};
+ $('#surprise').onclick=()=>{camera.position.set((Math.random()-.5)*17,3+Math.random()*8,(Math.random()-.5)*17);toast('Nueva perspectiva')};
+ document.querySelectorAll('.view').forEach(b=>b.onclick=()=>{const v=b.dataset.view;if(v==='front')camera.position.set(0,1,15);if(v==='side')camera.position.set(15,2,0);if(v==='top')camera.position.set(0,16,.1);if(v==='iso')camera.position.set(8,6,11);controls.target.set(0,0,0)});
+ document.querySelectorAll('.phase').forEach(b=>b.onclick=()=>{state.progress=(+b.dataset.phase)/4;state.playing=false;$('#play').textContent='▶ Reproducir';updatePhase()});
+ $('#reset').onclick=()=>{state.progress=0;state.bpm=120;state.playing=true;state.explode=state.explodeTarget=0;state.cycles=0;state.selected=null;$('#bpm').value=120;$('#bpmOut').textContent='120 BPM';$('#bpmRead').textContent='120 BPM';$('#cycles').textContent='0';$('#sep').value=0;$('#explode').textContent='DESPIECE DEL CORAZÓN';$('#play').textContent='Ⅱ Pausar';$('#pieceInfo').classList.remove('show');camera.position.set(8,6,11);controls.target.set(0,0,0);toast('Simulador reiniciado')};
+ $('#shot').onclick=()=>{const a=document.createElement('a');a.download='corazon-gato-adulto.png';a.href=renderer.domElement.toDataURL('image/png');a.click();toast('Captura PNG generada')};
+ window.addEventListener('keydown',e=>{if(/INPUT|SELECT/.test(e.target.tagName))return;if(e.key===' '){e.preventDefault();$('#play').click()}if(e.key==='ArrowRight')$('#step').click();if(e.key.toLowerCase()==='e')$('#explode').click();if(e.key.toLowerCase()==='r')$('#reset').click();if(e.key==='Escape')select(null)});
+ window.addEventListener('resize',resize);new ResizeObserver(resize).observe($('#viewport'));
+ $('#quality').onchange=e=>{const v=e.target.value;renderer.setPixelRatio(v==='high'?Math.min(devicePixelRatio,2):v==='medium'?Math.min(devicePixelRatio,1.5):1);resize();toast('Calidad gráfica actualizada')};
+}
+try{THREE=await import('three');({OrbitControls}=await import('three/addons/controls/OrbitControls.js'));build();bind();animate(0)}catch(err){console.error(err);$('#viewport').innerHTML='<div style="padding:30px;color:#fff">No se pudo cargar el laboratorio 3D. Revisa tu conexión a internet y vuelve a abrir este archivo.</div>'}
+</script>
+</body>
+</html>
