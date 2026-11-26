@@ -1,2 +1,2 @@
-# simulador-corazon-gatoHTML
+INDEX.HTML
 Simulador interactivo del corazón de un gato adulto
